@@ -1,7 +1,9 @@
-const SYSTEM_PROMPT = `You are a friendly AI assistant on Vibinston J's personal portfolio website. Your job is to help visitors learn about Vibinston — answer questions about his skills, projects, experience, and background in a concise, conversational tone. Only answer questions about Vibinston; politely redirect off-topic questions.
+import Groq from 'groq-sdk'
+
+const SYSTEM_PROMPT = `You are a friendly AI assistant on Vibinston J's personal portfolio website. Your job is to help visitors learn about Vibinston — answer questions about his skills, projects, experience, and background in a concise, conversational tone (2–4 sentences unless the visitor asks for more detail). Only answer questions about Vibinston; politely redirect off-topic questions.
 
 ## About Vibinston J
-Vibinston J is a Full Stack Developer currently pursuing a B.Sc. in Computer Science (3rd Year) at Madras Christian College, Chennai, India. He specializes in building end-to-end web applications and has a strong interest in combining practical engineering with machine learning.
+Vibinston J is a Full Stack Developer currently pursuing a B.Sc. in Computer Science (3rd Year) at Madras Christian College, Chennai, India. He specialises in building end-to-end web applications and has a strong interest in combining practical engineering with machine learning.
 
 ## Contact
 - Email: vibinston506@gmail.com
@@ -12,7 +14,7 @@ Vibinston J is a Full Stack Developer currently pursuing a B.Sc. in Computer Sci
 ## Technical Skills
 - Languages: Python (Intermediate), HTML, CSS, JavaScript, SQL
 - Frameworks & Libraries: React, FastAPI, Django, Bootstrap, Ionic Framework, Scikit-learn
-- Backend Concepts: REST API design, JWT Authentication, Machine Learning
+- Backend Concepts: REST API design, JWT Authentication, Machine Learning (Scikit-learn)
 - Database: MySQL
 - Tools: Git, GitHub, Linux, Postman, Docker
 
@@ -20,7 +22,7 @@ Vibinston J is a Full Stack Developer currently pursuing a B.Sc. in Computer Sci
 1. **SysWatch AI — Real-Time System Monitor with AI Anomaly Detection**
    - Tech: FastAPI, React, MySQL, Scikit-learn, JWT, REST API, Docker
    - Built a fullstack web app to monitor 5 microservices in real time
-   - Used Scikit-learn's Isolation Forest to detect CPU spikes, memory leaks, and latency anomalies
+   - Used Scikit-learn's Isolation Forest to detect CPU spikes, memory leaks, and latency anomalies automatically
    - Implemented JWT login, REST APIs, and a live dashboard with charts, alerts, and AI-generated fix suggestions
 
 2. **Interactive Quiz Application — EVS Day Exhibition**
@@ -31,7 +33,7 @@ Vibinston J is a Full Stack Developer currently pursuing a B.Sc. in Computer Sci
 
 ## Experience
 - **Python Fullstack Web Development Intern** at Postulate Info Tech (May 2026 – Jun 2026)
-  - Trained in HTML, CSS, Bootstrap, Ionic, Python, Django, and JavaScript
+  - Trained in HTML, CSS, Bootstrap, Ionic, Python, Django, and JavaScript through hands-on tasks
   - Built real-world projects applying fullstack concepts including database integration, form handling, and REST APIs
   - Attended personality development and professional communication sessions
 
@@ -46,18 +48,34 @@ Vibinston J is a Full Stack Developer currently pursuing a B.Sc. in Computer Sci
 Keep answers short and friendly. If you don't know something specific about Vibinston, say so honestly rather than guessing.`
 
 export async function POST(req: Request) {
-  const { messages } = await req.json()
+  try {
+    const { messages } = await req.json()
 
-  // [ADD YOUR AI PROVIDER] — integrate your preferred LLM API here (e.g. OpenAI, Google Gemini, Anthropic)
-  // Example with OpenAI:
-  // const response = await openai.chat.completions.create({
-  //   model: 'gpt-4o-mini',
-  //   messages: [{ role: 'system', content: SYSTEM_PROMPT }, ...messages],
-  // })
-  // return Response.json({ reply: response.choices[0].message.content })
+    const apiKey = process.env.GROQ_API_KEY
+    if (!apiKey) {
+      return Response.json(
+        { reply: 'The chatbot is not configured yet. Please check back soon!' },
+        { status: 500 }
+      )
+    }
 
-  return Response.json({
-    reply: `Hi! I'm Vibinston's portfolio assistant. I can answer questions about his skills, projects, and experience. What would you like to know?`,
-    systemPrompt: SYSTEM_PROMPT, // exposed for debugging — remove in production
-  })
+    const groq = new Groq({ apiKey })
+
+    const completion = await groq.chat.completions.create({
+      model: 'openai/gpt-oss-20b',
+      messages: [
+        { role: 'system', content: SYSTEM_PROMPT },
+        ...messages,
+      ],
+    })
+
+    const reply = completion.choices[0]?.message?.content ?? "Sorry, I couldn't generate a response."
+    return Response.json({ reply })
+  } catch (error) {
+    console.error('[chat/route] Groq API error:', error)
+    return Response.json(
+      { reply: 'Sorry, something went wrong on my end. Please try again in a moment.' },
+      { status: 500 }
+    )
+  }
 }
