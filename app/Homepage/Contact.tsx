@@ -28,7 +28,7 @@ function ContactForm() {
     setFormState('sending')
     setErrorMsg('')
 
-    const endpoint = process.env.NEXT_PUBLIC_FORMSPREE_URL
+    const endpoint = process.env.NEXT_PUBLIC_FORMSPREE_URL || 'https://formspree.io/f/meeyldrl'
     if (!endpoint) {
       setErrorMsg('Form endpoint is not configured. Please email me directly at vibinston506@gmail.com')
       setFormState('error')
