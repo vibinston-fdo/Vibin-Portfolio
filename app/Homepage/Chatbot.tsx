@@ -46,15 +46,26 @@ export default function Chatbot() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages: updatedMessages }),
       })
-      const data = await res.json()
+      
+      let data
+      try {
+        data = await res.json()
+      } catch (jsonErr) {
+        throw new Error('Server returned an invalid response.')
+      }
+
+      if (!res.ok) {
+        throw new Error(data.reply ?? 'Server error occurred.')
+      }
+
       setMessages([
         ...updatedMessages,
         { role: 'assistant', content: data.reply ?? "Sorry, I couldn't process that." },
       ])
-    } catch {
+    } catch (err: any) {
       setMessages([
         ...updatedMessages,
-        { role: 'assistant', content: 'Error connecting to the server. Please try again.' },
+        { role: 'assistant', content: err.message || 'Error connecting to the server. Please try again.' },
       ])
     } finally {
       setIsLoading(false)
